@@ -1,0 +1,214 @@
+
+<!-- saved from url=(0060)file:///C:/Users/DELL/Documents/bluetooth_content_share.html -->
+<html lang="en"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Billing System - Shakti Aluminum</title>
+    <style>
+        :root {
+            --primary-color: #2c3e50;
+            --accent-color: #e67e22; /* Aluminum/Hardware Copper Tone */
+            --bg-gray: #f4f4f4;
+        }
+
+        body { font-family: 'Segoe UI', Arial, sans-serif; background: #dcdde1; padding: 20px; }
+
+        /* Input Form Styling */
+        .container { background: white; padding: 30px; border-radius: 8px; max-width: 900px; margin: auto; box-shadow: 0 5px 20px rgba(0,0,0,0.2); }
+        .input-section { background: var(--bg-gray); padding: 20px; border-radius: 8px; margin-bottom: 30px; }
+       
+        .header-inputs { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px; }
+        .row { display: grid; grid-template-columns: 3fr 1fr 1fr 50px; gap: 10px; margin-bottom: 10px; align-items: center; }
+       
+        input { padding: 10px; border: 1px solid #ccc; border-radius: 4px; }
+        .delete-btn { background: #ff4757; color: white; border: none; padding: 8px; cursor: pointer; border-radius: 4px; }
+
+        .controls { display: flex; gap: 10px; margin-top: 15px; }
+        .add-btn { background: #2ed573; color: white; flex: 1; padding: 12px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; }
+        .generate-btn { background: var(--primary-color); color: white; flex: 2; padding: 12px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; }
+
+        /* PDF/Invoice Visuals */
+        #invoice {
+            display: none; /* Hidden until generated */
+            background: white;
+            padding: 40px;
+            margin-top: 30px;
+            border: 1px solid #ddd;
+            color: #333;
+        }
+
+        .invoice-header { display: flex; justify-content: space-between; border-bottom: 2px solid #333; padding-bottom: 15px; }
+        .biz-name { font-size: 28px; font-weight: bold; color: #000; margin: 0; }
+       
+        table { width: 100%; border-collapse: collapse; margin-top: 30px; }
+        th { background: #333; color: white; padding: 12px; text-align: left; }
+        td { padding: 12px; border-bottom: 1px solid #eee; }
+
+        .total-box { float: right; width: 250px; margin-top: 20px; border-top: 2px solid #333; padding-top: 10px; }
+        .total-row { display: flex; justify-content: space-between; font-size: 18px; padding: 5px 0; }
+        .grand-total { font-weight: bold; color: #d35400; font-size: 22px; }
+
+        .print-footer { display: flex; justify-content: space-between; margin-top: 80px; }
+        .sig-line { border-top: 1px solid #333; width: 200px; text-align: center; padding-top: 5px; }
+
+        /* Hide everything except the invoice when printing */
+        @media print {
+            body { background: white; padding: 0; }
+            .container, .input-section, .controls, h2 { display: none !important; }
+            #invoice { display: block !important; border: none; margin: 0; padding: 0; }
+            #print-action-btn { display: none !important; }
+        }
+
+        #print-action-btn { background: #3742fa; color: white; width: 100%; padding: 15px; border: none; border-radius: 5px; cursor: pointer; margin-top: 20px; font-weight: bold; display: none; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>Shakti Aluminum Billing</h2>
+   
+    <div class="input-section">
+        <div class="header-inputs">
+            <input type="text" id="cust-name" placeholder="Customer Name">
+            <input type="text" id="cust-phone" placeholder="Phone Number / Address">
+        </div>
+
+        <div style="display: grid; grid-template-columns: 3fr 1fr 1fr 50px; gap: 10px; margin-bottom: 5px; font-weight: bold;">
+            <div>Item Description</div>
+            <div>Quantity</div>
+            <div>Price Per Item</div>
+            <div></div>
+        </div>
+
+        <div id="item-list">
+            <div class="row">
+                <input type="text" placeholder="e.g., Sliding Window Section" class="desc">
+                <input type="number" placeholder="0" class="qty">
+                <input type="number" placeholder="0.00" class="price">
+                <button class="delete-btn" onclick="this.parentElement.remove()">✕</button>
+            </div>
+        </div>
+
+        <div class="controls">
+            <button class="add-btn" onclick="addRow()">+ Add New Row</button>
+            <button class="generate-btn" onclick="generateBill()">Generate Bill</button>
+        </div>
+    </div>
+
+    <div id="invoice">
+        <div class="invoice-header">
+            <div>
+                <p class="biz-name">SHAKTI ALUMINUM</p>
+                <p>All types of Aluminum Fabrication &amp; Glass Works<br>
+                Main Road, Industrial Area, [City Name]<br>
+                Contact: +91 98XXX XXXXX</p>
+            </div>
+            <div style="text-align: right;">
+                <h1 style="margin:0; color:#7f8c8d;">INVOICE</h1>
+                <p>Date: <span id="bill-date"></span><br>
+                Invoice No: <span id="bill-no"></span></p>
+            </div>
+        </div>
+
+        <div style="margin-top: 20px;">
+            <strong>To,</strong><br>
+            <span id="out-name" style="font-size: 1.1em; font-weight: bold;"></span><br>
+            <span id="out-phone"></span>
+        </div>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Description</th>
+                    <th>Qty</th>
+                    <th>Rate (₹)</th>
+                    <th style="text-align: right;">Total (₹)</th>
+                </tr>
+            </thead>
+            <tbody id="invoice-body"></tbody>
+        </table>
+
+        <div class="total-box">
+            <div class="total-row">
+                <span>Sub-Total:</span>
+                <span id="sub-total">₹0.00</span>
+            </div>
+            <div class="total-row grand-total">
+                <span>Grand Total:</span>
+                <span id="final-total">₹0.00</span>
+            </div>
+        </div>
+
+        <div class="print-footer">
+            <div class="sig-line">Customer Signature</div>
+            <div class="sig-line">Authorized Signatory<br><strong>(Shakti Aluminum)</strong></div>
+        </div>
+       
+        <p style="text-align: center; margin-top: 50px; font-size: 12px; color: #777;">Thank you for your business!</p>
+    </div>
+
+    <button id="print-action-btn" onclick="window.print()">Print or Save as PDF</button>
+</div>
+
+<script>
+    function addRow() {
+        const div = document.createElement('div');
+        div.className = 'row';
+        div.innerHTML = `
+            <input type="text" placeholder="Item Description" class="desc">
+            <input type="number" placeholder="0" class="qty">
+            <input type="number" placeholder="0.00" class="price">
+            <button class="delete-btn" onclick="this.parentElement.remove()">✕</button>
+        `;
+        document.getElementById('item-list').appendChild(div);
+    }
+
+    function generateBill() {
+        const descriptions = document.querySelectorAll('.desc');
+        const quantities = document.querySelectorAll('.qty');
+        const prices = document.querySelectorAll('.price');
+        const tableBody = document.getElementById('invoice-body');
+       
+        let subtotal = 0;
+        tableBody.innerHTML = ''; // Clear old data
+
+        for(let i=0; i < descriptions.length; i++) {
+            let name = descriptions[i].value;
+            let q = parseFloat(quantities[i].value) || 0;
+            let p = parseFloat(prices[i].value) || 0;
+            let lineTotal = q * p;
+
+            if(name !== "" || lineTotal > 0) {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${name}</td>
+                    <td>${q}</td>
+                    <td>₹${p.toLocaleString('en-IN')}</td>
+                    <td style="text-align: right;">₹${lineTotal.toLocaleString('en-IN')}</td>
+                `;
+                tableBody.appendChild(tr);
+                subtotal += lineTotal;
+            }
+        }
+
+        // Set Bill Meta Data
+        document.getElementById('out-name').innerText = document.getElementById('cust-name').value || "Valued Customer";
+        document.getElementById('out-phone').innerText = document.getElementById('cust-phone').value;
+        document.getElementById('bill-date').innerText = new Date().toLocaleDateString('en-IN');
+        document.getElementById('bill-no').innerText = Math.floor(1000 + Math.random() * 9000);
+
+        // Set Totals
+        document.getElementById('sub-total').innerText = "₹" + subtotal.toLocaleString('en-IN');
+        document.getElementById('final-total').innerText = "₹" + subtotal.toLocaleString('en-IN');
+
+        // Show Invoice and Print Button
+        document.getElementById('invoice').style.display = 'block';
+        document.getElementById('print-action-btn').style.display = 'block';
+       
+        // Auto-scroll to view the bill
+        window.scrollTo({ top: document.getElementById('invoice').offsetTop, behavior: 'smooth' });
+    }
+</script>
+
+
+</body></html>
